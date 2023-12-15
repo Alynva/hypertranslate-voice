@@ -187,18 +187,21 @@
             fixVoiceBtn()
             resultContainer.innerText = "Loading..."
             const data = new FormData(evt.target)
-            console.log(data)
+
             const result = await hypertranslate(data.get("text"), data.get("source"), data.get("target"), data.get("jumps"))
-            resultContainer.innerText = JSON.stringify(result)
+        
+            resultContainer.innerHTML = ''
+
+            const elem = document.createElement("li")
+            elem.innerHTML = `<b title="${document.querySelector(`[name="target"] [value="${result[1][0].source}"]`).innerText}">${result[1][0].source}</b> ${result[1][0].original}`
+            resultContainer.appendChild(elem)
+
+            for (const item of result[1]) {
+              const elem = document.createElement("li")
+              elem.innerHTML = `<b title="${document.querySelector(`[name="target"] [value="${item.target}"]`).innerText}">${item.target}</b> ${item.translated}`
+              resultContainer.appendChild(elem)
+            }
         })
-
-        // translateBtn.addEventListener("click", async evt => {
-        //     resultContainer.innerText = "Loading..."
-        //     const data = new FormData(evt.target.form)
-        //     const result = await translate(data.get("text"), data.get("source"), data.get("target"))
-        //     resultContainer.innerText = JSON.stringify(result)
-        // })
-
 
         fetch('/api/getTranslateLangs')
             .then(r => r.json())
