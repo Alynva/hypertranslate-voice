@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HyperTranslate - Voice</title>
+    <link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="favicon-16x16.png" sizes="16x16" />
+
+    <link
+    rel="stylesheet"
+      href="/css/tailwind-out.css"
+    />
+    <link
+    rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+      integrity="sha384-SZXxX4whJ79/gErwcOYf+zWLeJdY/qpuqC4cAa9rOGUstPomtqpuNWT9wdPEn2fk"
+      crossorigin="anonymous"
+    />
+    <script>
+        async function translate(text, source, target) {
+            return fetch("/api/translate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text, source, target })
+            }).then(r => r.json()).catch(err => {
+                console.error(err)
+                return null
+            })
+        }
+        async function hypertranslate(text, source, target, jumps) {
+            return fetch("/api/hypertranslate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text, source, target, jumps })
+            }).then(r => r.json()).catch(err => {
+                console.error(err)
+                return null
+            })
+        }
+    </script>
+    <script src="/js/voice.js"></script>
+  </head>
+  <body class="bg-gray-100">
+    <nav class="bg-blue-500 p-4 text-white">
+      <div class="container mx-auto flex justify-between items-center">
+        <div>
+          <img src="/img/hypertranslate.png" alt="Logo" class="h-8" />
+        </div>
+
+        <div class="space-x-4 flex">
+          <a href="/" class="flex items-center">
+            <i class="fas fa-home mr-2"></i> Início
+          </a>
+          <a href="/sobre.html" class="flex items-center">
+            <i class="fas fa-info-circle mr-2"></i> Sobre
+          </a>
+          <a
+            href="https://github.com/Alynva/hypertranslate-voice"
+            target="_blank"
+            class="flex items-center"
+          >
+            <i class="fab fa-github mr-2"></i> GitHub
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="relative h-64 bg-cover bg-center" style="background-image: url('/img/words.png');">
+
+      <!-- Overlay Preto/Opaco -->
+      <div class="absolute inset-0 bg-black opacity-50"></div>
+  
+      <!-- Conteúdo da Div -->
+      <form>
+      <div class="absolute inset-0 flex items-center justify-center">
+
+  
+          <!-- Botão Circular com Ícone -->
+          <button id="voice" type="button" class="bg-blue-500 text-white rounded-full w-12 h-12 mt-8">
+            <i class="fa fa-microphone fa-fw fa-lg"></i>
+          </button>
+
+          <div class="mx-5 w-full md:w-96">
+            <div class="block text-sm font-medium leading-6 text-gray-900 flex items-center justify-between">
+              <select name="source" class="bg-transparent text-white max-w-[60px]" title="Source language">
+                  <option disabled>Source lang</option>
+                  <option value="auto" selected>auto</option>
+              </select>
+
+              <span id="intermediary" class="text-white"></span>
+
+              <div class="flex items-center">
+                
+                <!-- Botão de Decremento -->
+                <button type="button" onclick="decrementValue()" class="text-white px-2" title="decrease the amount of steps">-</button>
+
+                <style>
+                  input[type=number][name=jumps]::-webkit-inner-spin-button {
+                    display: none
+                  }
+                </style>
+
+                <input type="number" name="jumps" value="1" size="1" class="bg-transparent text-white w-[1em] text-center" title="amount of steps taken to translate" required>
+            
+                <!-- Botão de Incremento -->
+                <button type="button" onclick="incrementValue()" class="text-white px-2" title="increase the amount of steps">+</button>
+
+                <script>
+                  document.querySelector('input[name="jumps"]').addEventListener('keydown', evt => {
+                    evt.target.style.width = evt.target.value.length + "em"
+                  })
+                  document.querySelector('input[name="jumps"]').addEventListener('keyup', evt => {
+                    evt.target.style.width = evt.target.value.length + "em"
+                  })
+                  function incrementValue() {
+                    const elem = document.querySelector('input[name="jumps"]')
+                    var value = parseInt(elem.value, 10);
+                    elem.value = Number.isNaN(value) ? 0 : value + 1;
+                    elem.style.width = elem.value.length + "em"
+                  }
+                
+                  function decrementValue() {
+                    const elem = document.querySelector('input[name="jumps"]')
+                    var value = parseInt(elem.value, 10);
+                    if (value > 1) {
+                      elem.value = Number.isNaN(value) ? 0 : value - 1;
+                      elem.style.width = elem.value.length + "em"
+                    }
+                  }
+                </script>
+              </div>
+            </div>
+            <div class="w-full relative mt-2 rounded-lg shadow-sm">
+              <input type="text" name="text" class="rightAligned block w-full rounded-lg border-0 py-3 pl-5 pr-36 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6" placeholder="Type here your message..." required>
+              <style>
+                input.rightAligned {
+                  direction:ltr;
+                  overflow:hidden;
+                }
+                input.rightAligned:valid:not(:focus) {
+                  direction:rtl;
+                  text-align: left;
+                  /* unicode-bidi: plaintext; */
+                  text-overflow: ellipsis;
+                }
+              </style>
+              <div class="absolute inset-y-0 right-0 flex items-center">
+                <select name="target" class="h-full max-w-[130px] rounded-lg border-0 bg-transparent py-0 pl-2 pr-7 text-gray-500 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm" required>
+                  <option selected disabled value="">Target lang</option>
+                </select>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Botão "GO!" -->
+          <button id="hypertranslate" class="bg-green-500 text-white h-12 px-4 py-2 rounded-lg mt-8">GO!</button>
+
+        </div>
+        </form>
+  
+  
+    </div>
+    <main
+      class="container mx-auto"
+    >
+        <div id="result"></div>
+    </main>
+
+    <script>
+        const form = document.querySelector("form")
+        const sourceInput = document.querySelector("form select[name=source]")
+        const targetInput = document.querySelector("form select[name=target]")
+        // const translateBtn = document.querySelector("form input#translate")
+        const hypertranslateBtn = document.querySelector("form #hypertranslate")
+        const resultContainer = document.querySelector("#result")
+        const voiceBtn = document.querySelector("#voice")
+        let voiceControls = initVoice(onTranslationComplete, onVoiceError, onTranslationIntermediary)
+
+        form.addEventListener("submit", async evt => {
+          evt.preventDefault()
+            voiceControls.stop()
+            fixVoiceBtn()
+            resultContainer.innerText = "Loading..."
+            const data = new FormData(evt.target)
+            console.log(data)
+            const result = await hypertranslate(data.get("text"), data.get("source"), data.get("target"), data.get("jumps"))
+            resultContainer.innerText = JSON.stringify(result)
+        })
+
+        // translateBtn.addEventListener("click", async evt => {
+        //     resultContainer.innerText = "Loading..."
+        //     const data = new FormData(evt.target.form)
+        //     const result = await translate(data.get("text"), data.get("source"), data.get("target"))
+        //     resultContainer.innerText = JSON.stringify(result)
+        // })
+
+
+        fetch('/api/getTranslateLangs')
+            .then(r => r.json())
+            .then(a => a.forEach(l => l[1].forEach(c => {
+                const option = document.createElement("option")
+                option.value = c
+                option.innerText = `${l[0]} (${c})`
+
+                sourceInput.appendChild(option.cloneNode(true))
+                targetInput.appendChild(option.cloneNode(true))
+            })))
+
+        function onTranslationComplete(message) {
+          document.querySelector("input[name=text]").value = (document.querySelector("input[name=text]").value + ' ' + message).trim()
+        }
+        function onVoiceError(error) {
+          window.alert(`Voice recognition unavailable: ${JSON.stringify(error)}`)
+          voiceBtn.disabled = true
+        }
+        function onTranslationIntermediary(message) {
+          const maxSize = 15
+          document.querySelector("#intermediary").innerText = message.length > maxSize ? "..."+message.slice(-maxSize-3) : message
+        }
+        voiceBtn.addEventListener("click", evt => {
+          fixVoiceBtn(voiceControls.toggle())
+        })
+        window.addEventListener('blur', function() {
+          voiceControls.stop()
+          fixVoiceBtn()
+        });
+        function fixVoiceBtn(listening = false) {
+          const icon = { false: 'microphone', true: 'circle'}
+          const color = { false: 'blue', true: 'red'}
+
+          const lastIcon = icon[!listening]
+          const newIcon = icon[listening]
+          const lastColor = color[!listening]
+          const newColor = color[listening]
+          voiceBtn.classList.remove(`bg-${lastColor}-500`)
+          voiceBtn.classList.add(`bg-${newColor}-500`)
+          voiceBtn.querySelector(".fa").classList.remove(`fa-${lastIcon}`)
+          voiceBtn.querySelector(".fa").classList.add(`fa-${newIcon}`)
+        }
+    </script>
+  </body>
+</html>
