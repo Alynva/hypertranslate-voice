@@ -24,7 +24,7 @@ export default async function* hypertranslate(text, begin_lang, end_lang, jumps)
 	console.log('Processing:', { text, begin_lang, end_lang, jumps })
 
 	for (let progress = 0; progress < jumps; progress++) {
-		console.log((progress / jumps * 100).toFixed(2)+"%")
+		console.log((progress / jumps * 100).toFixed(2)+`%: [${currentSource}] ${currentText}`)
 
 		const langNumber = Math.floor(Math.random() * (supportedLangs.length + 1))
 		const nextTarget = (progress < jumps - 1 ? supportedLangs[langNumber] : end_lang) || end_lang
@@ -38,6 +38,6 @@ export default async function* hypertranslate(text, begin_lang, end_lang, jumps)
 		currentSource = nextTarget
 	}
 
-	console.log('Finished.')
+	console.log(`Finished: [${currentSource}] ${currentText}`)
 	console.timeEnd('hypertranslate_'+text)
 }
