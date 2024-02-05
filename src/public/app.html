@@ -32,15 +32,34 @@
                 return null
             })
         }
-        async function hypertranslate(text, source, target, jumps) {
-            return fetch("/api/hypertranslate", {
+        async function* readAllChunks(readableStream) {
+          const reader = readableStream.getReader();
+          const chunks = [];
+          
+          let done, value;
+          while (!done) {
+            ({ value, done } = await reader.read());
+            if (done) {
+              return chunks;
+            }
+            // const txt = String.fromCharCode.apply(null, value) // não funciona pra acentos e outros caracteres especiais
+            const txt = new TextDecoder().decode(value)
+            const data = JSON.parse(txt)
+            yield data
+          }
+        }
+        async function* hypertranslate(text, source, target, jumps) {
+            const iterator = await fetch("/api/hypertranslate", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ text, source, target, jumps })
-            }).then(r => r.json()).catch(err => {
-                console.error(err)
-                return null
             })
+            .then(async r => {
+              if (!r.ok)
+                  throw new Error(await r.text());
+              return readAllChunks.apply(null, [r.body])
+            })
+            return yield* iterator
         }
     </script>
     <script src="/js/voice.js"></script>
@@ -188,15 +207,17 @@
             resultContainer.innerText = "Loading..."
             const data = new FormData(evt.target)
 
-            const result = await hypertranslate(data.get("text"), data.get("source"), data.get("target"), data.get("jumps"))
-        
             resultContainer.innerHTML = ''
 
-            const elem = document.createElement("li")
-            elem.innerHTML = `<b title="${document.querySelector(`[name="target"] [value="${result[1][0].source}"]`).innerText}">${result[1][0].source}</b> ${result[1][0].original}`
-            resultContainer.appendChild(elem)
+            let first = true
 
-            for (const item of result[1]) {
+            for await (const item of hypertranslate(data.get("text"), data.get("source"), data.get("target"), data.get("jumps"))) {
+              if (first) {
+                first = false
+                const elem = document.createElement("li")
+                elem.innerHTML = `<b title="${document.querySelector(`[name="target"] [value="${item.source}"]`).innerText}">${item.source}</b> ${item.original}`
+                resultContainer.appendChild(elem)
+              }
               const elem = document.createElement("li")
               elem.innerHTML = `<b title="${document.querySelector(`[name="target"] [value="${item.target}"]`).innerText}">${item.target}</b> ${item.translated}`
               resultContainer.appendChild(elem)

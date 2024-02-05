@@ -39,9 +39,10 @@ app.post('/api/translate', async (req, res) => {
 app.post('/api/hypertranslate', async (req, res) => {
     const { text, source, target, jumps } = req.body
     try {
-        const translation = await hypertranslate(text, source, target, jumps)
-        console.log(translation)
-        res.send(translation)
+        for await (const translationStage of await hypertranslate(text, source, target, jumps)) {
+            res.write(JSON.stringify(translationStage))
+        }
+        res.end()
     } catch(err) {
         console.error(err)
         res.status(500).send("Internal error.")
