@@ -1,3 +1,5 @@
+import { request } from 'undici'
+
 export const supportedLangsNames = [
     ["Africâner",["af"]],
     ["Albanês",["sq"]],
@@ -162,8 +164,8 @@ export default async function translate(text, sourceLang, targetLang) {
 
 	let url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURI(text)}`
 
-	const [result, lang] = await fetch(url)
-		.then(r => r.json())
+	const [result, lang] = await request(url)
+		.then(r => r.body.json())
 		.then(response => {
 			const data = response[0]
 			let result = ''
