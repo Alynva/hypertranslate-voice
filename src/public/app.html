@@ -44,8 +44,31 @@
             }
             // const txt = String.fromCharCode.apply(null, value) // não funciona pra acentos e outros caracteres especiais
             const txt = new TextDecoder().decode(value)
-            const data = JSON.parse(txt)
-            yield data
+            try {
+              if (txt.includes("}{")) {
+                console.warn(txt)
+                const parts = txt.split("}{").map((x, i, a) => {
+                  let result = ''
+                  if (i > 0) {
+                    result += '{'+x
+                  }
+                  if (i < a.length - 1) {
+                    result += '}'
+                  }
+                  return result
+                })
+                for (const part of parts) {
+                  const data = JSON.parse(part)
+                  yield data
+                }
+              } else {
+                const data = JSON.parse(txt)
+                yield data
+              }
+            } catch (err) {
+              console.error(txt)
+              throw err
+            }
           }
         }
         async function* hypertranslate(text, source, target, jumps) {
@@ -177,7 +200,7 @@
           </div>
     
           <!-- Botão "GO!" -->
-          <button id="hypertranslate" class="bg-green-500 text-white h-12 px-4 py-2 rounded-lg mt-8">GO!</button>
+          <button id="hypertranslate" class="bg-green-500 text-white h-12 px-4 py-2 rounded-lg mt-8 disabled:bg-gray-400">GO!</button>
 
         </div>
         </form>
@@ -187,7 +210,39 @@
     <main
       class="container mx-auto"
     >
-        <div id="result"></div>
+    <style>
+      input[type=checkbox]:checked ~ label li:nth-child(2):not(:last-child) {
+        font-size: 0;
+        color: transparent;
+      }
+      input[type=checkbox]:checked ~ label li:nth-child(2):not(:last-child) b::after {
+        content: '...';
+        color: black;
+        text-align: center;
+        position: absolute;
+        left: 0;
+        right: 0;
+        font-size: 12px;
+      }
+      input[type=checkbox]:checked ~ label li:nth-child(2):not(:last-child) b {
+        width: 260px;
+        display: inline-block;
+        height: 27px;
+        margin-top: -3px;
+        position: relative;
+      }
+      input[type=checkbox]:checked ~ label li:not(:first-child):not(:nth-child(2)):not(:last-child) {
+        display: none;
+      }
+      #result:empty::after {
+        content: "Try translating something...";
+        text-align: center;
+      }
+    </style>
+    <input type="checkbox" id="collapse" style="display: none" checked />
+    <label for="collapse" class="cursor-pointer">
+      <div id="result" class="max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg xl:max-w-screen-xl mx-auto mt-8 shadow-md p-6 rounded-lg flex flex-col gap-10"></div>
+    </label>
     </main>
 
     <script>
@@ -204,24 +259,37 @@
           evt.preventDefault()
             voiceControls.stop()
             fixVoiceBtn()
+            if (resultContainer.getAttribute('data-loading')) return
+
             resultContainer.innerText = "Loading..."
+            resultContainer.setAttribute('data-loading', true)
+            hypertranslateBtn.disabled = true
+
             const data = new FormData(evt.target)
 
-            resultContainer.innerHTML = ''
-
             let first = true
-
+            
             for await (const item of hypertranslate(data.get("text"), data.get("source"), data.get("target"), data.get("jumps"))) {
               if (first) {
+                resultContainer.innerHTML = ''
                 first = false
                 const elem = document.createElement("li")
-                elem.innerHTML = `<b title="${document.querySelector(`[name="target"] [value="${item.source}"]`).innerText}">${item.source}</b> ${item.original}`
+                elem.classList.add("list-none", "ml-[20px]")
+                elem.innerHTML = `<b class="px-2 py-1 rounded bg-blue-400" title="${document.querySelector(`[name="target"] [value="${item.source}"]`).innerText}">${item.source}</b> ${item.original}`
                 resultContainer.appendChild(elem)
               }
               const elem = document.createElement("li")
-              elem.innerHTML = `<b title="${document.querySelector(`[name="target"] [value="${item.target}"]`).innerText}">${item.target}</b> ${item.translated}`
+              elem.classList.add("list-none", "relative", "ml-[20px]")
+              elem.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="44" viewBox="0 0 12 44" fill="none" class="absolute left-[-20px] top-[-43px]">
+                <path d="M10.9221 43.4851C8.10065 40.6637 5.86254 37.3141 4.33557 33.6277C2.8086 29.9413 2.02268 25.9902 2.02268 22C2.02268 18.0098 2.8086 14.0587 4.33557 10.3723C5.86254 6.68589 8.10065 3.33632 10.9221 0.514851M10.9221 43.4851V33.063M10.9221 43.4851H0.5" stroke="black"/>
+              </svg><b class="px-2 py-1 rounded bg-gray-300" title="${document.querySelector(`[name="target"] [value="${item.target}"]`).innerText}">${item.target}</b> ${item.translated}`
               resultContainer.appendChild(elem)
             }
+            resultContainer.lastChild.querySelector("b").classList.remove("bg-gray-300")
+            resultContainer.lastChild.querySelector("b").classList.add("bg-blue-400")
+            
+            resultContainer.removeAttribute('data-loading')
+            hypertranslateBtn.disabled = false
         })
 
         fetch('/api/getTranslateLangs')
