@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "start": "node src/index.mjs",
     "dev": "node --watch-path=src src/index.mjs",
     "build-tailwind": "npx tailwindcss build -o ./src/public/css/tailwind-out.css"
   },
